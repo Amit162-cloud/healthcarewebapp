@@ -41,6 +41,7 @@ export interface Resource {
 
 export interface ServiceRequest {
   id: string;
+  hospitalName: string;
   resourceType: string;
   quantity: number;
   urgency: 'Low' | 'Medium' | 'High' | 'Critical';
@@ -153,9 +154,9 @@ const initialNotifications: Notification[] = [
 ];
 
 const initialServiceRequests: ServiceRequest[] = [
-  { id: 'SR001', resourceType: 'Oxygen Cylinders', quantity: 10, urgency: 'High', message: 'ICU running low', status: 'Approved', date: '2026-02-20' },
-  { id: 'SR002', resourceType: 'Blood Units (O+)', quantity: 5, urgency: 'Critical', message: 'Emergency surgery scheduled', status: 'Pending', date: '2026-02-20' },
-  { id: 'SR003', resourceType: 'Ventilators', quantity: 2, urgency: 'Medium', message: 'Preventive maintenance replacement', status: 'Completed', date: '2026-02-19' },
+  { id: 'SR001', hospitalName: 'City General Hospital', resourceType: 'Oxygen Cylinders', quantity: 10, urgency: 'High', message: 'ICU running low', status: 'Approved', date: '2026-02-20' },
+  { id: 'SR002', hospitalName: 'Metro Care Hospital', resourceType: 'Blood Units (O+)', quantity: 5, urgency: 'Critical', message: 'Emergency surgery scheduled', status: 'Pending', date: '2026-02-20' },
+  { id: 'SR003', hospitalName: 'City General Hospital', resourceType: 'Ventilators', quantity: 2, urgency: 'Medium', message: 'Preventive maintenance replacement', status: 'Completed', date: '2026-02-19' },
 ];
 
 const initialAuditLogs: AuditLog[] = [

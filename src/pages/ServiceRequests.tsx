@@ -16,11 +16,12 @@ import { toast } from 'sonner';
 const ServiceRequests = () => {
   const { serviceRequests, setServiceRequests, addAuditLog } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ resourceType: '', quantity: 1, urgency: 'Medium' as ServiceRequest['urgency'], message: '' });
+  const [form, setForm] = useState({ hospitalName: '', resourceType: '', quantity: 1, urgency: 'Medium' as ServiceRequest['urgency'], message: '' });
 
-  const openAdd = () => { setForm({ resourceType: '', quantity: 1, urgency: 'Medium', message: '' }); setModalOpen(true); };
+  const openAdd = () => { setForm({ hospitalName: '', resourceType: '', quantity: 1, urgency: 'Medium', message: '' }); setModalOpen(true); };
 
   const handleSave = () => {
+    if (!form.hospitalName) { toast.error('Enter hospital name'); return; }
     if (!form.resourceType) { toast.error('Select resource type'); return; }
     const req: ServiceRequest = {
       ...form,
@@ -43,6 +44,7 @@ const ServiceRequests = () => {
 
   const columns: Column<ServiceRequest>[] = [
     { key: 'id', label: 'Request ID' },
+    { key: 'hospitalName', label: 'Hospital' },
     { key: 'resourceType', label: 'Resource' },
     { key: 'quantity', label: 'Qty' },
     { key: 'urgency', label: 'Urgency', render: (r) => <StatusBadge status={r.urgency} /> },
@@ -62,6 +64,7 @@ const ServiceRequests = () => {
 
       <ModalForm open={modalOpen} onClose={() => setModalOpen(false)} title="New Service Request" onSubmit={handleSave}>
         <div className="space-y-3">
+          <div><Label>Hospital Name</Label><Input value={form.hospitalName} onChange={e => setForm(f => ({ ...f, hospitalName: e.target.value }))} placeholder="Enter hospital name" /></div>
           <div><Label>Resource Type</Label>
             <Select value={form.resourceType} onValueChange={v => setForm(f => ({ ...f, resourceType: v }))}>
               <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
