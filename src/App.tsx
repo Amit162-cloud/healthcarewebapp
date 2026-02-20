@@ -5,8 +5,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import { AppProvider } from "@/context/AppContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Index from "./pages/Index";
 import Appointments from "./pages/Appointments";
 import Patients from "./pages/Patients";
@@ -26,33 +30,38 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppProvider>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Index />} />
-              <Route path="/appointments" element={<Appointments />} />
-              <Route path="/patients" element={<Patients />} />
-              <Route path="/doctors" element={<Doctors />} />
-              <Route path="/resources" element={<Resources />} />
-              <Route path="/emergency" element={<EmergencyQueue />} />
-              <Route path="/crisis" element={<CrisisPanel />} />
-              <Route path="/service-requests" element={<ServiceRequests />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/audit-logs" element={<AuditLogs />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppProvider>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/" element={<Index />} />
+                <Route path="/appointments" element={<Appointments />} />
+                <Route path="/patients" element={<Patients />} />
+                <Route path="/doctors" element={<Doctors />} />
+                <Route path="/resources" element={<Resources />} />
+                <Route path="/emergency" element={<EmergencyQueue />} />
+                <Route path="/crisis" element={<CrisisPanel />} />
+                <Route path="/service-requests" element={<ServiceRequests />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/audit-logs" element={<AuditLogs />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AppProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

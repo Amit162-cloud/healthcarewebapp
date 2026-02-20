@@ -41,7 +41,7 @@ function DataTable<T extends { id: string }>({ columns, data, onRowClick }: Data
               >
                 {columns.map(col => (
                   <TableCell key={col.key} className="text-sm">
-                    {col.render ? col.render(item) : (item as any)[col.key]}
+                    {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key] ?? '')}
                   </TableCell>
                 ))}
               </TableRow>

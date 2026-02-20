@@ -37,6 +37,7 @@ export interface Resource {
   occupied: number;
   available: number;
   threshold?: number;
+  hospital_id?: string;
 }
 
 export interface ServiceRequest {
@@ -64,7 +65,7 @@ export interface Notification {
   title: string;
   message: string;
   type: 'appointment' | 'resource' | 'crisis' | 'service';
-  time: string;
+  timestamp: string;
   read: boolean;
 }
 
@@ -92,6 +93,7 @@ interface AppContextType {
   setEmergencyCases: React.Dispatch<React.SetStateAction<EmergencyCase[]>>;
   notifications: Notification[];
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+  markNotificationAsRead: (id: string) => void;
   auditLogs: AuditLog[];
   addAuditLog: (action: string, module: string) => void;
   crisisMode: boolean;
@@ -106,13 +108,8 @@ export const useApp = () => {
   return ctx;
 };
 
-const initialAppointments: Appointment[] = [
-  { id: '1', patientName: 'Rahul Sharma', date: '2026-02-20 09:00', doctor: 'Dr. Priya Patel', department: 'Cardiology', status: 'Scheduled' },
-  { id: '2', patientName: 'Anita Desai', date: '2026-02-20 10:30', doctor: 'Dr. Amit Singh', department: 'Neurology', status: 'Completed' },
-  { id: '3', patientName: 'Vikram Joshi', date: '2026-02-20 11:00', doctor: 'Dr. Priya Patel', department: 'Cardiology', status: 'Scheduled' },
-  { id: '4', patientName: 'Sneha Reddy', date: '2026-02-20 14:00', doctor: 'Dr. Neha Gupta', department: 'Orthopedics', status: 'Cancelled' },
-  { id: '5', patientName: 'Arjun Mehta', date: '2026-02-20 15:30', doctor: 'Dr. Rajesh Kumar', department: 'Dermatology', status: 'Scheduled' },
-];
+const initialAppointments: Appointment[] = [];
+// Appointments are now loaded from Supabase in the Appointments page
 
 const initialPatients: Patient[] = [
   { id: '1', name: 'Rahul Sharma', age: 45, contact: '+91 98765 11111', lastVisit: '2026-02-18', status: 'Active', gender: 'Male', bloodGroup: 'O+' },
@@ -128,17 +125,8 @@ const initialDoctors: Doctor[] = [
   { id: '4', name: 'Dr. Rajesh Kumar', department: 'Dermatology', availability: 'Mon-Fri 11AM-6PM', status: 'On Leave', slotDuration: 20 },
 ];
 
-const initialResources: Resource[] = [
-  { id: '1', type: 'bed', name: 'General Ward', total: 120, occupied: 95, available: 25 },
-  { id: '2', type: 'bed', name: 'ICU', total: 30, occupied: 27, available: 3, threshold: 5 },
-  { id: '3', type: 'bed', name: 'Private Room', total: 40, occupied: 32, available: 8 },
-  { id: '4', type: 'oxygen', name: 'Oxygen Cylinders', total: 200, occupied: 145, available: 55, threshold: 30 },
-  { id: '5', type: 'blood', name: 'A+', total: 50, occupied: 35, available: 15, threshold: 10 },
-  { id: '6', type: 'blood', name: 'B+', total: 40, occupied: 28, available: 12, threshold: 8 },
-  { id: '7', type: 'blood', name: 'O+', total: 60, occupied: 48, available: 12, threshold: 15 },
-  { id: '8', type: 'blood', name: 'AB-', total: 20, occupied: 18, available: 2, threshold: 5 },
-  { id: '9', type: 'ventilator', name: 'Ventilators', total: 50, occupied: 38, available: 8, threshold: 10 },
-];
+const initialResources: Resource[] = [];
+// Resources are now loaded from Supabase in the Resources page
 
 const initialEmergency: EmergencyCase[] = [
   { id: '1', patientName: 'Emergency Patient 1', severity: 'Critical', arrivalTime: '08:15 AM', assignedResource: 'ICU Bed 3', status: 'In Treatment' },
@@ -147,10 +135,10 @@ const initialEmergency: EmergencyCase[] = [
 ];
 
 const initialNotifications: Notification[] = [
-  { id: '1', title: 'ICU Near Capacity', message: 'ICU occupancy has reached 90%. Consider resource allocation.', type: 'resource', time: '5 min ago', read: false },
-  { id: '2', title: 'New Appointment', message: 'Rahul Sharma has booked an appointment with Dr. Priya Patel.', type: 'appointment', time: '15 min ago', read: false },
-  { id: '3', title: 'Blood Bank Alert', message: 'AB- blood units are critically low (2 units remaining).', type: 'crisis', time: '1 hour ago', read: true },
-  { id: '4', title: 'Service Request Approved', message: 'Request for 10 oxygen cylinders has been approved.', type: 'service', time: '2 hours ago', read: true },
+  { id: '1', title: 'ICU Near Capacity', message: 'ICU occupancy has reached 90%. Consider resource allocation.', type: 'resource', timestamp: new Date(Date.now() - 5 * 60000).toISOString(), read: false },
+  { id: '2', title: 'New Appointment', message: 'Rahul Sharma has booked an appointment with Dr. Priya Patel.', type: 'appointment', timestamp: new Date(Date.now() - 15 * 60000).toISOString(), read: false },
+  { id: '3', title: 'Blood Bank Alert', message: 'AB- blood units are critically low (2 units remaining).', type: 'crisis', timestamp: new Date(Date.now() - 60 * 60000).toISOString(), read: true },
+  { id: '4', title: 'Service Request Approved', message: 'Request for 10 oxygen cylinders has been approved.', type: 'service', timestamp: new Date(Date.now() - 120 * 60000).toISOString(), read: true },
 ];
 
 const initialServiceRequests: ServiceRequest[] = [
@@ -189,6 +177,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setAuditLogs(prev => [log, ...prev]);
   };
 
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => 
+      prev.map(notif => 
+        notif.id === id ? { ...notif, read: true } : notif
+      )
+    );
+  };
+
   return (
     <AppContext.Provider value={{
       appointments, setAppointments,
@@ -198,6 +194,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       serviceRequests, setServiceRequests,
       emergencyCases, setEmergencyCases,
       notifications, setNotifications,
+      markNotificationAsRead,
       auditLogs, addAuditLog,
       crisisMode, setCrisisMode,
     }}>

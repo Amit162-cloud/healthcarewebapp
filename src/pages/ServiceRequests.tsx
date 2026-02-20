@@ -18,6 +18,18 @@ const ServiceRequests = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ hospitalName: '', resourceType: '', quantity: 1, urgency: 'Medium' as ServiceRequest['urgency'], message: '' });
 
+  // List of hospitals
+  const hospitals = [
+    'City General Hospital',
+    'Metro Care Hospital',
+    'St. Mary\'s Medical Center',
+    'Apollo Healthcare',
+    'Fortis Hospital',
+    'Max Super Specialty Hospital',
+    'AIIMS Delhi',
+    'Lilavati Hospital',
+  ];
+
   const openAdd = () => { setForm({ hospitalName: '', resourceType: '', quantity: 1, urgency: 'Medium', message: '' }); setModalOpen(true); };
 
   const handleSave = () => {
@@ -64,7 +76,21 @@ const ServiceRequests = () => {
 
       <ModalForm open={modalOpen} onClose={() => setModalOpen(false)} title="New Service Request" onSubmit={handleSave}>
         <div className="space-y-3">
-          <div><Label>Hospital Name</Label><Input value={form.hospitalName} onChange={e => setForm(f => ({ ...f, hospitalName: e.target.value }))} placeholder="Enter hospital name" /></div>
+          <div>
+            <Label>Hospital Name</Label>
+            <Select value={form.hospitalName} onValueChange={v => setForm(f => ({ ...f, hospitalName: v }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select hospital" />
+              </SelectTrigger>
+              <SelectContent>
+                {hospitals.map((hospital) => (
+                  <SelectItem key={hospital} value={hospital}>
+                    {hospital}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div><Label>Resource Type</Label>
             <Select value={form.resourceType} onValueChange={v => setForm(f => ({ ...f, resourceType: v }))}>
               <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>

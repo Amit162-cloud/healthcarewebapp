@@ -1,18 +1,17 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import KPICard from '@/components/shared/KPICard';
 import { useApp } from '@/context/AppContext';
+import { supabase } from '@/lib/supabase';
 import { CalendarDays, BedDouble, Activity, Wind, Droplets, AlertTriangle, TrendingUp, Users } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { toast } from 'sonner';
 
 const patientInflow = [
   { name: 'Mon', patients: 45 }, { name: 'Tue', patients: 52 }, { name: 'Wed', patients: 38 },
   { name: 'Thu', patients: 65 }, { name: 'Fri', patients: 48 }, { name: 'Sat', patients: 72 }, { name: 'Sun', patients: 30 },
 ];
 
-const appointmentStatus = [
-  { name: 'Scheduled', value: 35 }, { name: 'Completed', value: 45 },
-  { name: 'Cancelled', value: 12 }, { name: 'No-Show', value: 8 },
-];
 const PIE_COLORS = ['hsl(205,85%,55%)', 'hsl(152,52%,44%)', 'hsl(0,72%,51%)', 'hsl(38,92%,50%)'];
 
 const bedOccupancy = [
@@ -27,9 +26,81 @@ const oxygenUsage = [
   { name: 'Week 3', usage: 160 }, { name: 'Week 4', usage: 155 },
 ];
 
+interface SupabaseAppointment {
+  id: number;
+  phone_number: string;
+  patient_name: string | null;
+  appointment_date: string;
+  appointment_time: string;
+  status: string;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const { appointments, resources, emergencyCases, notifications } = useApp();
-  const todayApps = appointments.filter(a => a.status === 'Scheduled').length;
+  const [realAppointments, setRealAppointments] = useState<SupabaseAppointment[]>([]);
+  const [appointmentStats, setAppointmentStats] = useState({
+    scheduled: 0,
+    completed: 0,
+    cancelled: 0,
+    noShow: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real appointments from Supabase
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .order('appointment_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return;
+      }
+
+      if (data) {
+        setRealAppointments(data);
+        
+        // Calculate stats
+        const stats = {
+          scheduled: data.filter(a => a.status === 'confirmed').length,
+          completed: data.filter(a => a.status === 'completed').length,
+          cancelled: data.filter(a => a.status === 'cancelled').length,
+          noShow: data.filter(a => a.status === 'no-show').length,
+        };
+        setAppointmentStats(stats);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get today's appointments count
+  const getTodayAppointments = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return realAppointments.filter(a => 
+      a.appointment_date === today && a.status === 'confirmed'
+    ).length;
+  };
+
+  // Prepare appointment status data for pie chart
+  const appointmentStatus = [
+    { name: 'Scheduled', value: appointmentStats.scheduled },
+    { name: 'Completed', value: appointmentStats.completed },
+    { name: 'Cancelled', value: appointmentStats.cancelled },
+    { name: 'No-Show', value: appointmentStats.noShow },
+  ];
+
+  const todayApps = getTodayAppointments();
   const beds = resources.filter(r => r.type === 'bed');
   const availableBeds = beds.reduce((s, b) => s + b.available, 0);
   const icu = resources.find(r => r.name === 'ICU');
@@ -139,10 +210,57 @@ const Dashboard = () => {
                     <p className="text-sm font-medium text-foreground">{a.title}</p>
                     <p className="text-xs text-muted-foreground">{a.message}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">{a.time}</span>
+                  <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">{a.timestamp}</span>
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Recent Appointments */}
+        {!loading && realAppointments.length > 0 && (
+          <div className="bg-card rounded-xl border border-border p-5 card-shadow">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-primary" /> Recent Appointments
+            </h3>
+            <div className="space-y-3">
+              {realAppointments.slice(0, 5).map(apt => (
+                <div key={apt.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {apt.patient_name || 'Unknown Patient'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{apt.phone_number}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-foreground">{apt.appointment_date}</p>
+                    <p className="text-xs text-muted-foreground">{apt.appointment_time}</p>
+                  </div>
+                  <div>
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      apt.status === 'confirmed' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300' :
+                      apt.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300' :
+                      apt.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300' :
+                      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                    }`}>
+                      {apt.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {realAppointments.length > 5 && (
+              <div className="mt-4 text-center">
+                <a href="/appointments" className="text-sm text-primary hover:underline">
+                  View all {realAppointments.length} appointments →
+                </a>
+              </div>
+            )}
           </div>
         )}
       </div>
